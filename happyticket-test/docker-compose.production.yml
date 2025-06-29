@@ -1,0 +1,52 @@
+services:
+  api:
+    image: anasamin22311/happyticket-api:latest
+    ports:
+      - "5000:5000"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+    env_file:
+      - ./API/.env.production
+    volumes:
+      - /opt/happyticket/wwwroot:/app/wwwroot
+      - ./appsettings/API/appsettings.Production.json:/app/appsettings.Production.json:ro
+    depends_on:
+      - db
+
+  ui:
+    image: anasamin22311/happyticket-ui:latest
+    ports:
+      - "5001:5001"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+    env_file:
+      - ./API/.env.production
+    volumes:
+      - ./appsettings/UI/appsettings.Production.json:/app/appsettings.Production.json:ro
+      - ./appsettings/UI.Client/appsettings.Production.json:/app/wwwroot/appsettings.Production.json:ro
+
+  db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      SA_PASSWORD: ${SQL_SA_PASSWORD}
+      ACCEPT_EULA: "Y"
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlvolume:/var/opt/mssql
+    restart: always
+
+  nginx:
+    image: nginx:latest
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - api
+      - ui
+
+volumes:
+  sqlvolume:

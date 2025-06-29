@@ -1,0 +1,34 @@
+# apiVersion: batch/v1
+# kind: CronJob
+# metadata:
+#   name: mssql-backup
+#   namespace: happyticket
+# spec:
+#   schedule: "0 */6 * * *"   
+#   jobTemplate:
+#     spec:
+#       template:
+#         spec:
+#           containers:
+#           - name: mssql-backup
+#             image: mcr.microsoft.com/mssql-tools
+#             command:
+#             - /bin/bash
+#             - -c
+#             - |
+#               BACKUP_FILE="/backups/db_backup_$(date +'%Y%m%d%H%M%S').bak"
+#               /opt/mssql-tools/bin/sqlcmd -S mssql -U sa -P $MSSQL_SA_PASSWORD -Q "BACKUP DATABASE [NewHappy2] TO DISK = N'$BACKUP_FILE' WITH NOFORMAT, NOINIT, NAME = 'Full Backup', SKIP, NOREWIND, NOUNLOAD, STATS = 10"
+#             env:
+#             - name: MSSQL_SA_PASSWORD
+#               valueFrom:
+#                 secretKeyRef:
+#                   name: mssql
+#                   key: MSSQL_SA_PASSWORD
+#             volumeMounts:
+#             - name: backup-storage
+#               mountPath: /backups
+#           restartPolicy: OnFailure
+#           volumes:
+#           - name: backup-storage
+#             persistentVolumeClaim:
+#               claimName: mssql-backup-pvc

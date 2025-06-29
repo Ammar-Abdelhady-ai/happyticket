@@ -1,0 +1,213 @@
+- name: Update apt cache
+  ansible.builtin.apt:
+    update_cache: true
+
+- name: disable swap
+  ansible.builtin.command: swapoff -a
+  ignore_errors: true
+
+- name: Remove swap partition from /etc/fstab
+  ansible.builtin.replace:
+    path: /etc/fstab
+    regexp: '^(?!#).*swap.*$'
+    replace: '# \g<0>'
+
+- name: Install containerd
+  ansible.builtin.get_url:
+    url: https://github.com/containerd/containerd/releases/download/v2.0.3/containerd-2.0.3-linux-amd64.tar.gz
+    dest: /tmp/containerd-2.0.3-linux-amd64.tar.gz
+
+- name: Extract containerd tarball
+  ansible.builtin.unarchive:
+    src: /tmp/containerd-2.0.3-linux-amd64.tar.gz
+    dest: /usr/local
+    remote_src: yes
+
+- name: Create directory for systemd service if it does not exist
+  ansible.builtin.file:
+    path: /usr/local/lib/systemd/system
+    state: directory
+
+- name: containerd as a systemd service
+  ansible.builtin.get_url:
+    url: https://raw.githubusercontent.com/containerd/containerd/main/containerd.service
+    dest: /usr/local/lib/systemd/system/containerd.service
+  notify: reload systemd
+
+- name: download runc
+  ansible.builtin.get_url:
+    url: https://github.com/opencontainers/runc/releases/download/v1.2.5/runc.amd64
+    dest: /tmp/runc.amd64
+    mode: '0755'
+
+- name: Install runc using install command
+  ansible.builtin.command:
+    cmd: install -m 755 /tmp/runc.amd64 /usr/local/sbin/runc
+
+- name: download CNI plugins
+  ansible.builtin.get_url:
+    url: https://github.com/containernetworking/plugins/releases/download/v1.6.2/cni-plugins-linux-amd64-v1.6.2.tgz
+    dest: /tmp/cni-plugins-linux-amd64-v1.6.2.tgz
+
+- name: Create directory for CNI if it does not exist
+  ansible.builtin.file:
+    path: /opt/cni/bin
+    state: directory
+
+- name: Extract CNI plugins
+  ansible.builtin.unarchive:
+    src: /tmp/cni-plugins-linux-amd64-v1.6.2.tgz
+    dest: /opt/cni/bin
+    remote_src: yes
+
+- name: enable port forwarding
+  ansible.builtin.sysctl:
+    name: net.ipv4.ip_forward
+    value: 1
+    state: present
+    sysctl_set: yes
+
+- name: restart containerd
+  ansible.builtin.systemd:
+    state: restarted
+    enabled: yes
+    name: containerd
+
+- name: Check if containerd is working
+  ansible.builtin.command:
+    cmd: ctr --address /var/run/containerd/containerd.sock info
+  register: ctr_info
+  ignore_errors: true
+
+- name: install prerequisites for kubeadm
+  ansible.builtin.apt:
+    name: "{{ item }}"
+    state: present
+  with_items:
+  - apt-transport-https
+  - ca-certificates
+  - curl
+  - gpg
+
+- name: Ensure /etc/apt/keyrings directory exists
+  ansible.builtin.file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: '0755'
+
+- name: Download Kubernetes GPG key
+  ansible.builtin.get_url:
+    url: https://pkgs.k8s.io/core:/stable:/v1.32/deb/Release.key
+    dest: /tmp/kubernetes-release.key
+    mode: '0644'
+
+- name: Check if Kubernetes GPG keyring exists
+  ansible.builtin.stat:
+    path: /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+  register: keyring_stat
+
+- name: Add Kubernetes GPG key to keyring
+  ansible.builtin.command:
+    cmd: gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg /tmp/kubernetes-release.key
+  become: true
+
+- name: Ensure /etc/apt/sources.list.d directory exists
+  ansible.builtin.file:
+    path: /etc/apt/sources.list.d
+    state: directory
+    mode: '0755'
+
+- name: Add Kubernetes repository to sources list
+  ansible.builtin.lineinfile:
+    path: /etc/apt/sources.list.d/kubernetes.list
+    line: 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.32/deb/ /'
+    create: true
+    mode: '0644'
+  become: true
+
+- name: apt install kubeadm, kubelet, and kubectl
+  ansible.builtin.apt:
+    name: "{{ item }}"
+    state: present
+    update_cache: yes
+  with_items:
+  - kubeadm
+  - kubelet
+  - kubectl
+
+- name: enable kubelet service
+  ansible.builtin.systemd:
+    name: kubelet
+    enabled: yes
+    state: restarted
+
+- name: Set hostname
+  ansible.builtin.hostname:
+    name: "controlplane"
+
+- name: Check if Kubernetes /etc/kubernetes/admin.conf file exists
+  ansible.builtin.stat:
+    path: /etc/kubernetes/admin.conf
+  register: admin_conf_stat
+
+# Master node initialization 
+- name: Initialize Kubernetes cluster
+  ansible.builtin.command:
+    cmd: kubeadm init
+  register: kubeadm_output
+  changed_when: false
+  when: admin_conf_stat.stat.exists == false
+
+- name: Ensure ~/.kube directory exists
+  ansible.builtin.file:
+    path: "~/.kube"
+    state: directory
+    mode: "0755"
+  become_user: "{{ ansible_user }}"
+
+- name: Copy /etc/kubernetes/admin.conf to ~/.kube/config
+  ansible.builtin.copy:
+    src: /etc/kubernetes/admin.conf
+    dest: "/home/{{ ansible_user }}/.kube/config"
+    remote_src: true
+  become: true
+
+- name: Set permissions on ~/.kube/config
+  ansible.builtin.file:
+    path: "/home/{{ ansible_user }}/.kube/config"
+    mode: '0755'
+  become: true
+
+- name: Copy /etc/kubernetes/admin.conf to ./config
+  ansible.builtin.fetch:
+    src: /etc/kubernetes/admin.conf
+    dest: "./config"
+    flat: yes
+
+- name: Apply Calico CNI network plugin
+  ansible.builtin.command:
+    cmd: kubectl apply -f https://raw.githubusercontent.com/projectcalico/calico/v3.26.1/manifests/calico.yaml
+  become: false
+  when: admin_conf_stat.stat.exists == false
+
+- name: Store join command output to file
+  ansible.builtin.copy:
+    content: "{{ kubeadm_output }}"
+    dest: ./kubeadm_join_command.log
+    mode: '0755'
+  delegate_to: localhost
+  become: false
+
+- name: Remove taint from control-plane node to allow scheduling pods (single-node cluster)
+  ansible.builtin.command:
+    cmd: kubectl taint nodes --all node-role.kubernetes.io/control-plane-
+  become: false
+  ignore_errors: true
+  when: admin_conf_stat.stat.exists == false
+
+- name: Save kubeadm initialization output to local file
+  ansible.builtin.copy:
+    content: "{{ kubeadm_output.stdout }}"
+    dest: "./kubeadm_init_output.txt"
+  delegate_to: localhost
+  become: false

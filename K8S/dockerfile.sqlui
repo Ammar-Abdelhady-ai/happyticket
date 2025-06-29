@@ -1,0 +1,21 @@
+FROM sqlpad/sqlpad:latest
+
+# Install dependencies and Microsoft ODBC Driver
+RUN apt-get update && apt-get install -y \
+    curl \
+    gnupg \
+    apt-transport-https \
+    unixodbc \
+    unixodbc-dev \
+    odbcinst1debian2 \
+    libodbc1 \
+    libgssapi-krb5-2 \
+    && curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add - \
+    && curl https://packages.microsoft.com/config/debian/11/prod.list > /etc/apt/sources.list.d/mssql-release.list \
+    && apt-get update \
+    && ACCEPT_EULA=Y apt-get install -y msodbcsql18 \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Node.js MSSQL driver
+RUN npm install tedious

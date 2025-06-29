@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ui
+  namespace: happyticket
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: ui
+  template:
+    metadata:
+      labels:
+        app: ui
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app
+                      operator: In
+                      values:
+                        - ui
+                topologyKey: "kubernetes.io/hostname"
+      containers:
+        - name: ui
+          image: ammarabdelhady8132/happyticket-ui:latest
+          ports:
+            - containerPort: 5001
+          env:
+            - name: ASPNETCORE_ENVIRONMENT
+              value: "Production"
+          envFrom:
+            - configMapRef:
+                name: app-config
+            - secretRef:
+                name: app-secrets
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"

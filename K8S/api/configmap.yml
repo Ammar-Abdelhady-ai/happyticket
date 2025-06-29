@@ -1,0 +1,35 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+  namespace: happyticket
+data:
+  ConnectionStrings__Sql: |
+    Server=mssql;
+    Database=NewHappy2;
+    User Id=sa;
+    Password=Anas@8264;
+    Encrypt=True;
+    TrustServerCertificate=True;
+  JwtSettings__Issuer: https://ticketshappy.com
+  JwtSettings__Audiences__0: https://ticketshappy.com
+  JwtSettings__ValidateIssuer: "true"
+  JwtSettings__ValidateAudience: "true"
+  JwtSettings__TokenExpMinutes: "20"
+  JwtSettings__RefreshTokenExpMinutes: "10080"
+  EmailConfig__From: Happy@ticketshappy.com
+  EmailConfig__SmtpServer: register-smtp-oxcs.hostingplatform.com
+  EmailConfig__Port: "587"
+  EmailConfig__UserName: Happy@ticketshappy.com
+  CleanupOptions__TokenIntervalInHours: "24"
+  IsPaymentTest: "1"
+  PaymentRedirectUrl: https://ticketshappy.com/cart/
+  Telr__Test: "1"
+  Telr__Framed: "2"
+  Telr__StoreId: "31153"
+  Telr__Currency: SAR
+  Telr__AuthorisedUrl: https://ticketshappy.com/cart
+  Telr__DeclinedUrl: https://ticketshappy.com/cart
+  Telr__CancelledUrl: https://ticketshappy.com/cart
+  Tax: "0.15"
+  GiftTransactionSettings__GiftTransactionExpiry: 00:05:00

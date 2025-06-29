@@ -1,0 +1,5 @@
+---
+- name: Setup Kubernetes Cluster
+  hosts: all
+  roles:
+    - kubernetes_cluster
