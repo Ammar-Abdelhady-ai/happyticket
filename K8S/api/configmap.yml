@@ -5,7 +5,7 @@ metadata:
   namespace: happyticket
 data:
   ConnectionStrings__Sql: |
-    Server=mssql;
+    Server=db;
     Database=NewHappy2;
     User Id=sa;
     Password=Anas@8264;
