@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: db
+  namespace: happyticket
+spec:
+  serviceName: db
+  replicas: 2
+  selector:
+    matchLabels:
+      app: db
+  template:
+    metadata:
+      labels:
+        app: db
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: app
+                    operator: In
+                    values:
+                      - db
+              topologyKey: kubernetes.io/hostname
+      containers:
+        - name: sqlserver
+          image: mcr.microsoft.com/mssql/server:2019-latest
+          ports:
+            - containerPort: 1433
+              name: tcp
+          env:
+            - name: ACCEPT_EULA
+              value: "Y"
+            - name: SA_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: db-secret
+                  key: SA_PASSWORD
+          volumeMounts:
+            - name: db-storage
+              mountPath: /var/opt/mssql
+  volumeClaimTemplates:
+    - metadata:
+        name: db-storage
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 60Gi
+        storageClassName: local-expandable

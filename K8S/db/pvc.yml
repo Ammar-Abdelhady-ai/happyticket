@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: db-storage-db-0
+  namespace: happyticket
+spec:
+  volumeName: mssql-backup-pv
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 60Gi
