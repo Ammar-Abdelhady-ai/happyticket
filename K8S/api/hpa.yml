@@ -9,7 +9,7 @@ spec:
     kind: Deployment
     name: api
   minReplicas: 2
-  maxReplicas: 6
+  maxReplicas: 8
   metrics:
     - type: Resource
       resource:
@@ -22,4 +22,4 @@ spec:
         name: memory
         target:
           type: Utilization
-          averageUtilization: 75
+          averageUtilization: 70

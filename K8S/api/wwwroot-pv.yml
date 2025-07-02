@@ -8,5 +8,6 @@ spec:
   accessModes:
     - ReadWriteMany
   persistentVolumeReclaimPolicy: Retain
+  storageClassName: manual
   hostPath:
     path: /mnt/data/wwwroot
