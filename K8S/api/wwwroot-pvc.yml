@@ -5,7 +5,7 @@ metadata:
   namespace: happyticket
 spec:
   accessModes:
-    - ReadWriteOnce
+    - ReadWriteMany
   resources:
     requests:
-      storage: 5Gi
+      storage: 1Gi
