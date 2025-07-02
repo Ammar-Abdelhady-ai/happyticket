@@ -45,8 +45,9 @@ spec:
     - metadata:
         name: db-storage
       spec:
-        accessModes: ["ReadWriteOnce"]
+        accessModes:
+          - ReadWriteMany
+        storageClassName: nfs
         resources:
           requests:
             storage: 60Gi
-        storageClassName: local-expandable

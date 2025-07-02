@@ -1,45 +1,14 @@
-# هذا هو pv.yml
-
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: mssql-pv-controlplane
+  name: mssql-nfs-pv
 spec:
   capacity:
-    storage: 60Gi
+    storage: 200Gi
   accessModes:
-    - ReadWriteOnce
-  storageClassName: local-expandable
+    - ReadWriteMany
   persistentVolumeReclaimPolicy: Retain
-  nodeAffinity:
-    required:
-      nodeSelectorTerms:
-        - matchExpressions:
-            - key: kubernetes.io/hostname
-              operator: In
-              values:
-                - controlplane
-  hostPath:
-    path: /mnt/data/mssql/controlplane
----
-apiVersion: v1
-kind: PersistentVolume
-metadata:
-  name: mssql-pv-worker-1
-spec:
-  capacity:
-    storage: 60Gi
-  accessModes:
-    - ReadWriteOnce
-  storageClassName: local-expandable
-  persistentVolumeReclaimPolicy: Retain
-  nodeAffinity:
-    required:
-      nodeSelectorTerms:
-        - matchExpressions:
-            - key: kubernetes.io/hostname
-              operator: In
-              values:
-                - worker-1
-  hostPath:
-    path: /mnt/data/mssql/worker-1
+  storageClassName: nfs
+  nfs:
+    server: 142.132.210.239
+    path: /mnt/nfs-shared/mssql
