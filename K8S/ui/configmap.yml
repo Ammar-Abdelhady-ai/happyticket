@@ -3,7 +3,7 @@ kind: ConfigMap
 metadata:
   name: app-config
 data:
-  ConnectionStrings__Sql: Server=mssql,1433;Database=NewHappy2;User Id=sa;Password=Anas@8264;TrustServerCertificate=True;
+  ConnectionStrings__Sql: Server=db,1433;Database=NewHappy2;User Id=sa;Password=Anas@8264;TrustServerCertificate=True;
   JwtSettings__Issuer: https://ticketshappy.com
   JwtSettings__Audiences__0: https://ticketshappy.com
   JwtSettings__ValidateIssuer: "true"

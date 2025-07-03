@@ -38,7 +38,29 @@ spec:
                 name: app-config
             - secretRef:
                 name: app-secrets
+          volumeMounts:
+            - name: dataprotection-volume
+              mountPath: /root/.aspnet/DataProtection-Keys
           resources:
             requests:
               cpu: "100m"
               memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 5001
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 5001
+            initialDelaySeconds: 10
+            periodSeconds: 10
+      volumes:
+        - name: dataprotection-volume
+          persistentVolumeClaim:
+            claimName: dataprotection-pvc

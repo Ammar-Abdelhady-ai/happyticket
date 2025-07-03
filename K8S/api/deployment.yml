@@ -45,6 +45,8 @@ spec:
             - name: appsettings-volume
               mountPath: /app/appsettings.Production.json
               subPath: appsettings.Production.json
+            - name: dataprotection-volume
+              mountPath: /app/dataprotection
       volumes:
         - name: wwwroot-volume
           persistentVolumeClaim:
@@ -52,3 +54,6 @@ spec:
         - name: appsettings-volume
           configMap:
             name: api-appsettings-json
+        - name: dataprotection-volume
+          persistentVolumeClaim:
+            claimName: dataprotection-pvc
