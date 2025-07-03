@@ -13,20 +13,37 @@ spec:
       labels:
         app: api
     spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: In
+                    values:
+                      - controlplane
+                      - worker-1
       containers:
         - name: api
           image: ammarabdelhady8132/happyticket-api:latest
+          imagePullPolicy: Always
           ports:
             - containerPort: 5000
           envFrom:
             - configMapRef:
-                name: app-config
+                name: api-config
             - secretRef:
-                name: app-secrets
+                name: api-secret
           volumeMounts:
             - name: wwwroot-volume
               mountPath: /app/wwwroot
+            - name: appsettings-volume
+              mountPath: /app/appsettings.Production.json
+              subPath: appsettings.Production.json
       volumes:
         - name: wwwroot-volume
           persistentVolumeClaim:
             claimName: wwwroot-pvc
+        - name: appsettings-volume
+          configMap:
+            name: api-appsettings-json

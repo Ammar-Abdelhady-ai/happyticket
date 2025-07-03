@@ -1,52 +1,69 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: db
+  name: mssql
   namespace: happyticket
 spec:
-  serviceName: db
+  serviceName: "mssql"
   replicas: 2
   selector:
     matchLabels:
-      app: db
+      app: mssql
   template:
     metadata:
       labels:
-        app: db
+        app: mssql
     spec:
       affinity:
-        podAntiAffinity:
+        podAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution: []
+        nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
-            - labelSelector:
-                matchExpressions:
-                  - key: app
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/hostname
                     operator: In
                     values:
-                      - db
-              topologyKey: kubernetes.io/hostname
+                      - controlplane
+                      - worker-1
+      initContainers:
+        - name: fix-permissions
+          image: busybox
+          command: ["sh", "-c", "chown -R 10001:0 /var/opt/mssql"]
+          volumeMounts:
+            - name: mssql
+              mountPath: /var/opt/mssql
       containers:
-        - name: sqlserver
-          image: mcr.microsoft.com/mssql/server:2019-latest
+        - name: mssql
+          image: mcr.microsoft.com/mssql/server:2022-latest
           ports:
             - containerPort: 1433
-              name: tcp
           env:
             - name: ACCEPT_EULA
               value: "Y"
-            - name: SA_PASSWORD
+            - name: MSSQL_SA_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: db-secret
-                  key: SA_PASSWORD
+                  name: mssql
+                  key: MSSQL_SA_PASSWORD
+          resources:
+            requests:
+              memory: "6Gi"
+              cpu: "3"
+            limits:
+              memory: "10Gi"
+              cpu: "4"
           volumeMounts:
-            - name: db-storage
+            - name: mssql
               mountPath: /var/opt/mssql
+      securityContext:
+        fsGroup: 0
   volumeClaimTemplates:
     - metadata:
-        name: db-storage
+        name: mssql
       spec:
         accessModes: ["ReadWriteOnce"]
+        storageClassName: local-expandable
         resources:
           requests:
             storage: 60Gi
-        storageClassName: local-expandable
