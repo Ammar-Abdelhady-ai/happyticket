@@ -24,7 +24,14 @@ spec:
                       operator: In
                       values:
                         - ui
-                topologyKey: "kubernetes.io/hostname"
+                topologyKey: kubernetes.io/hostname
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app: ui
       containers:
         - name: ui
           image: ammarabdelhady8132/happyticket-ui:latest

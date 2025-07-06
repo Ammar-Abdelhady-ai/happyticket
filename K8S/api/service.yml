@@ -4,10 +4,9 @@ metadata:
   name: api
   namespace: happyticket
 spec:
-  type: NodePort
+  type: LoadBalancer
   selector:
     app: api
   ports:
     - port: 5000
       targetPort: 5000
-      nodePort: 32123
