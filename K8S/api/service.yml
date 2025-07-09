@@ -4,9 +4,10 @@ metadata:
   name: api
   namespace: happyticket
 spec:
-  type: LoadBalancer
+  type: ClusterIP
   selector:
     app: api
   ports:
-    - port: 5000
+    - protocol: TCP
+      port: 5000
       targetPort: 5000
