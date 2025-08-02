@@ -4,9 +4,10 @@ metadata:
   name: db
   namespace: happyticket
 spec:
-  clusterIP: None
-  selector:
-    app: db
   ports:
     - port: 1433
+      targetPort: 1433
       name: tcp
+  clusterIP: None  
+  selector:
+    app: db

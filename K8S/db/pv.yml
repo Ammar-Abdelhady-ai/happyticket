@@ -11,4 +11,4 @@ spec:
   storageClassName: nfs
   nfs:
     server: 142.132.210.239
-    path: /mnt/nfs-shared/mssql
+    path: /exports/dataprotection

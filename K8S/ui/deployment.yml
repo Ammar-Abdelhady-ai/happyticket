@@ -23,23 +23,6 @@ spec:
                     values:
                       - ui
               topologyKey: kubernetes.io/hostname
-        nodeAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            - weight: 100
-              preference:
-                matchExpressions:
-                  - key: kubernetes.io/hostname
-                    operator: In
-                    values:
-                      - controlplane
-                      - worker-1
-      topologySpreadConstraints:
-        - maxSkew: 1
-          topologyKey: kubernetes.io/hostname
-          whenUnsatisfiable: ScheduleAnyway
-          labelSelector:
-            matchLabels:
-              app: ui
       containers:
         - name: ui
           image: ammarabdelhady8132/happyticket-ui:latest
@@ -53,29 +36,3 @@ spec:
                 name: app-config
             - secretRef:
                 name: app-secrets
-          volumeMounts:
-            - name: dataprotection-volume
-              mountPath: /root/.aspnet/DataProtection-Keys
-          resources:
-            requests:
-              cpu: "100m"
-              memory: "128Mi"
-            limits:
-              cpu: "500m"
-              memory: "512Mi"
-          readinessProbe:
-            httpGet:
-              path: /
-              port: 5001
-            initialDelaySeconds: 5
-            periodSeconds: 5
-          livenessProbe:
-            httpGet:
-              path: /
-              port: 5001
-            initialDelaySeconds: 10
-            periodSeconds: 10
-      volumes:
-        - name: dataprotection-volume
-          persistentVolumeClaim:
-            claimName: dataprotection-pvc

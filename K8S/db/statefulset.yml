@@ -24,6 +24,19 @@ spec:
                     values:
                       - db
               topologyKey: kubernetes.io/hostname
+      initContainers:
+        - name: init-permissions
+          image: busybox
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+          command: ["sh", "-c", "mkdir -p /mnt/data && chmod -R 777 /mnt/data"]
+          volumeMounts:
+            - name: db-storage
+              mountPath: /mnt/data
+              subPathExpr: $(POD_NAME)
       containers:
         - name: sqlserver
           image: mcr.microsoft.com/mssql/server:2019-latest
@@ -38,9 +51,14 @@ spec:
                 secretKeyRef:
                   name: db-secret
                   key: SA_PASSWORD
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
           volumeMounts:
             - name: db-storage
               mountPath: /var/opt/mssql
+              subPathExpr: $(POD_NAME)
   volumeClaimTemplates:
     - metadata:
         name: db-storage
