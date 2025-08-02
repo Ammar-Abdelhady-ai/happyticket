@@ -3,17 +3,13 @@ kind: IPAddressPool
 metadata:
   name: my-ip-pool
   namespace: metallb-system
-  annotations:
-    metallb.universe.tf/allow-shared-ip: "true"
 spec:
   addresses:
-    - 142.132.210.239/32  # controlplane
-    - 188.138.101.4/32    # worker-1
-
+    - 142.132.210.239/32  
+    - 188.138.101.4/32     
 ---
 apiVersion: metallb.io/v1beta1
 kind: L2Advertisement
 metadata:
   name: l2-advertisement
   namespace: metallb-system
-
