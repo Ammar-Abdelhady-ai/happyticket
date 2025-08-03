@@ -1,0 +1,10 @@
+**/bin/
+**/obj/
+.vscode/
+.idea/
+*.md
+*.sh
+*.log
+.git
+.gitignore
+Dockerfile*

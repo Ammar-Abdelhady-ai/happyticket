@@ -1,0 +1,27 @@
+# -------- Build Stage --------
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+WORKDIR /src
+
+COPY ./HappyTicket /src/HappyTicket
+
+RUN ls -la /src/HappyTicket/Happy.sln
+
+WORKDIR /src/HappyTicket/API
+RUN dotnet restore --nologo
+RUN dotnet publish -c Release -o /app/publish --no-restore --nologo
+
+# -------- Runtime Stage --------
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
+WORKDIR /app
+
+COPY --from=build /app/publish .
+
+COPY ./happyticket_credintial/wwwroot ./wwwroot
+COPY ./happyticket_credintial/appsettings/API/appsettings.Production.json ./appsettings.Production.json
+COPY ./happyticket_credintial/API/.env.production .env
+
+ENV ASPNETCORE_URLS=http://+:5000
+ENV ASPNETCORE_ENVIRONMENT=Production
+EXPOSE 5000
+
+ENTRYPOINT ["dotnet", "API.dll"]
