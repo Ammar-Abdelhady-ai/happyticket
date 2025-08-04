@@ -1,0 +1,51 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: mssql-backup
+  namespace: happyticket
+spec:
+  schedule: "0 2 * * *"   # يعمل يومياً الساعة 2 صباحاً
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: mssql-backup
+              image: mcr.microsoft.com/mssql-tools
+              env:
+                - name: SA_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: db-secret
+                      key: SA_PASSWORD
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  BACKUP_FILE="/backups/NewHappy2-$(date +%Y-%m-%d-%H%M).bak"
+
+                  echo ">>> Waiting for SQL Server to be ready..."
+                  for i in {1..10}; do
+                    /opt/mssql-tools/bin/sqlcmd -S db-0.db.happyticket.svc.cluster.local -U sa -P $SA_PASSWORD -Q "SELECT 1" && break
+                    echo "Retry $i: SQL Server not ready, waiting..."
+                    sleep 5
+                  done
+
+                  echo ">>> Starting FULL BACKUP to $BACKUP_FILE ..."
+                  /opt/mssql-tools/bin/sqlcmd -S db-0.db.happyticket.svc.cluster.local \
+                    -U sa -P $SA_PASSWORD \
+                    -Q "BACKUP DATABASE [NewHappy2] TO DISK='${BACKUP_FILE}' WITH FORMAT, INIT;"
+
+                  echo ">>> Cleaning old backups older than 7 days..."
+                  find /backups -type f -mtime +7 -delete
+
+                  echo "✅ Backup Completed Successfully!"
+              volumeMounts:
+                - name: backup-nfs
+                  mountPath: /backups
+          volumes:
+            - name: backup-nfs
+              nfs:
+                server: 142.132.210.239
+                path: /exports/mssql-backups
