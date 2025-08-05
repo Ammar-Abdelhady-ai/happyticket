@@ -19,14 +19,21 @@ spec:
       http:
         paths:
           - path: /api/(.*)
-            pathType: Prefix
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: api
+                port:
+                  number: 5000
+          - path: /(swagger/.*)
+            pathType: ImplementationSpecific
             backend:
               service:
                 name: api
                 port:
                   number: 5000
           - path: /(.*)
-            pathType: Prefix
+            pathType: ImplementationSpecific
             backend:
               service:
                 name: ui
