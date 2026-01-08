@@ -1,0 +1,124 @@
+name: Deploy to Server (Verified Build + Manual SCP + Zero Downtime + Preserve wwwroot)
+
+on:
+  push:
+    branches:
+      - Development
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v3
+
+    - name: Set up .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: '8.0.x'
+
+    - name: Install WebAssembly build tools
+      run: dotnet workload install wasm-tools
+
+    - name: Clean publish folders
+      run: rm -rf ./publish ./publish-tmp && mkdir -p ./publish/HappyAPI ./publish/HappyBlazor
+
+    - name: Publish API (Linux-x64) and exclude wwwroot
+      run: |
+        dotnet publish ./API/API.csproj -c Release -r linux-x64 -o ./publish-tmp/HappyAPI
+        rsync -av --exclude=wwwroot ./publish-tmp/HappyAPI/ ./publish/HappyAPI/
+
+    - name: Publish Blazor (Linux-x64) and exclude wwwroot
+      run: |
+        dotnet publish ./UI/UI/UI.csproj -c Release -r linux-x64 -o ./publish-tmp/HappyBlazor
+        rsync -av --exclude=wwwroot ./publish-tmp/HappyBlazor/ ./publish/HappyBlazor/
+
+    - name: Verify publish output
+      run: |
+        if [ ! -d "./publish/HappyAPI" ] || [ -z "$(ls -A ./publish/HappyAPI)" ]; then
+          echo "❌ ./publish/HappyAPI is missing or empty." && exit 1
+        fi
+        if [ ! -d "./publish/HappyBlazor" ] || [ -z "$(ls -A ./publish/HappyBlazor)" ]; then
+          echo "❌ ./publish/HappyBlazor is missing or empty." && exit 1
+        fi
+
+    - name: Zip publish folder
+      run: zip -r publish-new.zip ./publish
+
+    - name: Encode ZIP to base64
+      run: base64 publish-new.zip > publish-new.b64
+
+    - name: Upload base64 via scp
+      run: |
+        sudo apt-get update && sudo apt-get install -y sshpass
+        sshpass -p 'K]£2!12:Kku7' scp -o StrictHostKeyChecking=no publish-new.b64 Anas@188.138.101.4:/tmp/
+
+    - name: Extract ZIP and move wwwroot on server
+      uses: appleboy/ssh-action@v0.1.7
+      with:
+        host: 188.138.101.4
+        username: Anas
+        password: K]£2!12:Kku7
+        script: |
+          export PASS='K]£2!12:Kku7'
+
+          ACTIVE_DIR=/var/www
+          STANDBY_DIR=/var/www/standby
+
+          echo "$PASS" | sudo -S mkdir -p $STANDBY_DIR
+          echo "$PASS" | sudo -S mv /tmp/publish-new.b64 $STANDBY_DIR/
+          echo "$PASS" | sudo -S base64 -d $STANDBY_DIR/publish-new.b64 > $STANDBY_DIR/publish-new.zip
+          echo "$PASS" | sudo -S unzip -o $STANDBY_DIR/publish-new.zip -d $STANDBY_DIR/
+          echo "$PASS" | sudo -S mv $STANDBY_DIR/publish/HappyAPI $STANDBY_DIR/
+          echo "$PASS" | sudo -S mv $STANDBY_DIR/publish/HappyBlazor $STANDBY_DIR/
+          echo "$PASS" | sudo -S rm -rf $STANDBY_DIR/publish $STANDBY_DIR/publish-new.zip $STANDBY_DIR/publish-new.b64
+
+          API_DIR=$STANDBY_DIR/HappyAPI
+          UI_DIR=$STANDBY_DIR/HappyBlazor
+
+          echo "📂 Copying wwwroot from live to new..."
+          if [ -d "$ACTIVE_DIR/HappyAPI/wwwroot" ]; then
+            echo "$PASS" | sudo -S cp -r $ACTIVE_DIR/HappyAPI/wwwroot $API_DIR/
+          else
+            echo "$PASS" | sudo -S mkdir -p $API_DIR/wwwroot
+            echo "$PASS" | sudo -S chmod -R 777 $API_DIR/wwwroot
+          fi
+
+          if [ -d "$ACTIVE_DIR/HappyBlazor/wwwroot" ]; then
+            echo "$PASS" | sudo -S cp -r $ACTIVE_DIR/HappyBlazor/wwwroot $UI_DIR/
+          else
+            echo "$PASS" | sudo -S mkdir -p $UI_DIR/wwwroot
+            echo "$PASS" | sudo -S chmod -R 777 $UI_DIR/wwwroot
+          fi
+
+    - name: Activate Deployment (Archive old, Deploy new)
+      uses: appleboy/ssh-action@v0.1.7
+      with:
+        host: 188.138.101.4
+        username: Anas
+        password: K]£2!12:Kku7
+        script: |
+          export PASS='K]£2!12:Kku7'
+
+          ACTIVE_DIR=/var/www
+          STANDBY_DIR=/var/www/standby
+
+          echo "$PASS" | sudo -S rm -rf $ACTIVE_DIR/HappyAPI-old $ACTIVE_DIR/HappyBlazor-old
+          if [ -d "$ACTIVE_DIR/HappyAPI" ]; then
+            echo "$PASS" | sudo -S mv $ACTIVE_DIR/HappyAPI $ACTIVE_DIR/HappyAPI-old
+          fi
+          if [ -d "$ACTIVE_DIR/HappyBlazor" ]; then
+            echo "$PASS" | sudo -S mv $ACTIVE_DIR/HappyBlazor $ACTIVE_DIR/HappyBlazor-old
+          fi
+
+          echo "🚀 Deploying API and Blazor..."
+          echo "$PASS" | sudo -S rsync -av $STANDBY_DIR/HappyAPI/ $ACTIVE_DIR/HappyAPI/
+          echo "$PASS" | sudo -S rsync -av $STANDBY_DIR/HappyBlazor/ $ACTIVE_DIR/HappyBlazor/
+
+          echo "$PASS" | sudo -S chmod -R 775 $ACTIVE_DIR/HappyAPI $ACTIVE_DIR/HappyBlazor
+          echo "$PASS" | sudo -S chmod -R 777 $ACTIVE_DIR/HappyAPI/wwwroot $ACTIVE_DIR/HappyBlazor/wwwroot
+
+          echo "$PASS" | sudo -S systemctl restart myapi.service
+          echo "$PASS" | sudo -S systemctl restart HBlazor.service
+          echo "$PASS" | sudo -S systemctl restart nginx
