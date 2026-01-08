@@ -6,8 +6,4 @@ metadata:
 spec:
   accessModes:
     - ReadWriteMany
-  storageClassName: nfs
-  resources:
-    requests:
-      storage: 200Gi
-  volumeName: mssql-nfs-pv  
+  storageClassName: standard  
