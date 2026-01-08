@@ -15,19 +15,23 @@ spec:
     spec:
       affinity:
         podAntiAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            - labelSelector:
-                matchExpressions:
-                  - key: app
-                    operator: In
-                    values:
-                      - ui
-              topologyKey: kubernetes.io/hostname
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app
+                      operator: In
+                      values:
+                        - ui
+                topologyKey: kubernetes.io/hostname
+
+
       containers:
         - name: ui
           image: ammarabdelhady8132/happyticket-ui:latest
           ports:
-            - containerPort: 5001
+            - containerPort: 80
           env:
             - name: ASPNETCORE_ENVIRONMENT
               value: "Production"

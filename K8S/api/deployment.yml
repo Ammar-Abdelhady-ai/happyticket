@@ -37,7 +37,7 @@ spec:
               app: api
       containers:
         - name: api
-          image: ammarabdelhady8132/happyticket-api:latest
+          image: ###REGISTRY###/happyticket/api:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 5000

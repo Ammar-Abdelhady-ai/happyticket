@@ -1,9 +1,17 @@
 apiVersion: v1
-kind: ConfigMap
+kind: Service
 metadata:
-  name: custom-headers
+  name: ingress-nginx-controller
   namespace: ingress-nginx
-data:
-  Cache-Control: "public, max-age=31536000, immutable"
-  Strict-Transport-Security: "max-age=63072000; includeSubDomains; preload"
-...
+spec:
+  type: LoadBalancer
+  selector:
+    app.kubernetes.io/name: ingress-nginx
+    app.kubernetes.io/component: controller
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80
+    - name: https
+      port: 443
+      targetPort: 443

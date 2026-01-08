@@ -15,7 +15,7 @@ data:
       },
       "BaseUrls": {
         "BlazorBaseUrl": "https://ticketshappy.com/",
-        "ApiBaseUrl": "https://ticketshappy.com/"
+        "ApiBaseUrl": "http://api.happyticket.svc.cluster.local:5000/"
       },
       "Serilog": {
         "Using": [ "Serilog.Sinks.Console", "Serilog.Sinks.File" ],

@@ -8,23 +8,47 @@ data:
   JwtSettings__Audiences__0: https://ticketshappy.com
   JwtSettings__ValidateIssuer: "true"
   JwtSettings__ValidateAudience: "true"
-  JwtSettings__TokenExpMinutes: "20"
-  JwtSettings__RefreshTokenExpMinutes: "10080"
-  EmailConfig__From: Happy@ticketshappy.com
-  EmailConfig__SmtpServer: register-smtp-oxcs.hostingplatform.com
+  JwtSettings__TokenExpMinutes: "15"
+  JwtSettings__RefreshTokenExpMinutes: "525600000"
+
+  EmailConfig__From: admin@ticketshappy.com
+  EmailConfig__SmtpServer: smtp.zoho.com
   EmailConfig__Port: "587"
-  EmailConfig__UserName: Happy@ticketshappy.com
+  EmailConfig__UserName: admin@ticketshappy.com
+
   CleanupOptions__TokenIntervalInHours: "24"
   IsPaymentTest: "1"
   PaymentRedirectUrl: https://ticketshappy.com/cart/
+
   Telr__Test: "1"
   Telr__Framed: "2"
   Telr__StoreId: "31153"
   Telr__Currency: SAR
-  Telr__AuthorisedUrl: https://ticketshappy.com/cart
-  Telr__DeclinedUrl: https://ticketshappy.com/cart
-  Telr__CancelledUrl: https://ticketshappy.com/cart
+  Telr__AuthorisedUrl: https://ticketshappy.com/cart?status=success
+  Telr__DeclinedUrl: https://ticketshappy.com/cart?status=declined
+  Telr__CancelledUrl: https://ticketshappy.com/cart?status=cancelled
+
   Tax: "0.15"
   GiftTransactionSettings__GiftTransactionExpiry: 00:05:00
+
   ASPNETCORE_ENVIRONMENT: Production
   DOTNET_BUNDLE_EXTRACT_BASE_DIR: "/tmp/.net"
+
+  # FCM non-sensitive
+  FCM__PROJECTID: happy-flutter-7df45
+  FCM__CLIENTEMAIL: firebase-adminsdk-fbsvc@happy-flutter-7df45.iam.gserviceaccount.com
+  FCM__CLIENTID: "101777394099354433181"
+  FCM__CLIENTX509CERTURL: https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-fbsvc%40happy-flutter-7df45.iam.gserviceaccount.com
+
+  # HMS non-sensitive
+  HMS__APPID: "115055907"
+  HMS__APPSECRET: 11ea7a1f43fc4af1c59d6233244f8962b2efb1d36a87bff71e43fa988aded2f5
+  HMS__TOKENURL: https://oauth-login.cloud.huawei.com/oauth2/v3/token
+  HMS__PUSHURL: https://push-api.cloud.huawei.com/v1/115055907/messages:send
+
+  MinIO__Endpoint: http://minio-service.happyticket.svc.cluster.local:9000
+  MinIO__UseSSL: "false"
+  MinIO__BucketName: bucket1
+  MinIO__BaseUrl: http://minio-service.happyticket.svc.cluster.local:9000
+
+

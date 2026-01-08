@@ -1,0 +1,28 @@
+replicas: 1
+
+accessKey: "anasbucket.io7772"
+secretKey: "anas@bucket.io3337"
+
+persistence:
+  enabled: true
+  existingClaim: export-minio
+
+resources:
+  limits:
+    cpu: 5
+    memory: 10Gi
+  requests:
+    cpu: 1
+    memory: 4Gi
+
+service:
+  type: ClusterIP
+  port: 9000
+
+console:
+  service:
+    type: ClusterIP
+    port: 9001
+
+ingress:
+  enabled: false

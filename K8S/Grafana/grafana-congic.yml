@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-config
+  namespace: monitoring
+data:
+  GF_SERVER_ROOT_URL: https://ticketshappy.com/grafana
+  GF_SERVER_SERVE_FROM_SUB_PATH: "true"
+
